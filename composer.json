@@ -1,0 +1,20 @@
+{
+    "name": "uis/air",
+    "description": "Common interfaces and types for Air content",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Uis\\Air\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Dmitriy Gritsenko",
+            "email": "dg@uis.kz"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "php": ">=8.0.0"
+    }
+}
