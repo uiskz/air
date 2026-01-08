@@ -1,5 +1,5 @@
 {
-    "name": "uis/air",
+    "name": "uiskz/air",
     "description": "Common interfaces and types for Air content",
     "license": "MIT",
     "autoload": {
