@@ -1,6 +1,7 @@
 {
     "name": "uiskz/air",
     "description": "Common interfaces and types for Air content",
+    "homepage": "https://github.com/uiskz/air",
     "license": "MIT",
     "autoload": {
         "psr-4": {
@@ -13,8 +14,9 @@
             "email": "dg@uis.kz"
         }
     ],
-    "minimum-stability": "stable",
     "require": {
-        "php": ">=8.0.0"
+        "php": ">=8.3",
+        "uiskz/travel": "dev-main",
+        "zircote/swagger-php": "^6.0"
     }
 }
