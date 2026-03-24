@@ -1,9 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Uis\Air;
+namespace Uiskz\Air;
 
 use OpenApi\Attributes as OA;
+use Ramsey\Uuid\Uuid;
 
 /**
  * Base Air Option containing flight information and prices available for booking
@@ -74,43 +75,9 @@ class AirOption
     public float $price = 0.0;
 
     /**
-     *
-     * @var float Consolidator markup of the option
-     */
-    public float $markup = 0.0;
-
-    /**
-     *
-     * @var float Airline fee of the option
-     */
-    public float $airlineFee = 0.0;
-
-    /**
-     *
-     * @var float Agent markup of the option
-     */
-    public float $agentMarkup = 0.0;
-
-    /**
-     * @var float Agent discount
-     */
-    public float $discount = 0;
-
-    /**
-     * @var float Consolidator serviceFee
-     */
-    public float $consolidatorServiceFee = 0;
-
-    /**
      * @var float Consolidator markup
      */
     public float $consolidatorMarkup = 0;
-
-
-    /**
-     * @var float Agency markup
-     */
-    public float $agencyMarkup = 0.0;
 
     /**
      * @var AirTrip[]
@@ -134,29 +101,20 @@ class AirOption
     )]
     public string $carrier;
 
-    public array $carriers = [];
-
-    public string|null $class = null;
-
-    public string|null $fareBasis = null;
-
     public int $maxStops = 0;
 
     public string|null $familyID = null;
 
     public array $rules = [];
 
-    public string|null $provider;
-
-    public int|null $providerID;
-
-    public string|null $terminal;
-
     /**
      * @var boolean
      */
     public bool $isRefundable = false;
 
+    /**
+     * @var boolean
+     */
     public bool $isChangeable = false;
 
     /**
@@ -166,13 +124,7 @@ class AirOption
     public bool $hasBaggage = false;
 
     /**
-     *
-     * @var boolean
-     */
-    public bool $hasPackages = false;
-
-    /**
-     *  @var $packages BaseFareFamilies
+     *  @var $packages AirFareFamilies
      */
     #[OA\Property(
         property: 'packages',
@@ -180,12 +132,7 @@ class AirOption
         description: 'Brands for the current option',
         type: 'object'
     )]
-    public BaseFareFamilies $packages;
-
-    /**
-     * @var string
-     */
-    public string $flightsString = '';
+    public AirFareFamilies $packages;
 
     /**
      *
@@ -194,69 +141,19 @@ class AirOption
     public array $extraCharges = [];
 
     /**
-     *
-     * @var array
-     */
-    public array $policyViolations = [];
-
-    /**
-     *
-     * @var float
-     */
-    public float $minPrice = 0.0;
-
-    /**
-     * @var float
-     */
-    public float $maxPrice = 0.0;
-
-
-    /**
-     * @var boolean
-     */
-    public bool $isForbidden = false;
-
-    /**
-     * @var string Segments hash string used in AWS to compare that options are for the same flight
-     */
-    public string $segmentsHash = '';
-
-    /**
-     * @var array Array of fare basis codes in relation to segments
-     */
-    public array $fareBasisCodes = [];
-
-    /**
-     * @var string Agent fare family name. Only used in AWS when fare families used
-     */
-    public string $agentFareFamilyName = '';
-
-    /**
      * @var mixed Provider custom data required for booking
      */
     public mixed $providerData;
 
-    public bool $markupEnabled = true;
-
-    public string $mode = Provider::MODE_LIVE;
-
-    /* @var BasePassengerInfo[] */
+    /* @var PassengerFareDetails[] */
     public array $passengerInfos = [];
 
-    private array $serviceFeeInfos = [];
-
-    private array $discountInfos = [];
-
-    private array $markupInfos = [];
-
-    private array $appliedActions = [];
-
-    public string $searchType = AirSearchRQ::SEARCH_TYPE_ONE_WAY;
+    public string $searchType = AirSearchRequest::SEARCH_TYPE_ONE_WAY;
 
     public function __construct()
     {
         $this->generateNewId();
-        $this->packages = new BaseFareFamilies();
+        $this->packages = new AirFareFamilies();
     }
 
     public function __clone()
@@ -277,37 +174,15 @@ class AirOption
     }
 
     /**
-     * Function adds new trip to current option
+     * Function adds the new trip to the current option
      * @param AirTrip $trip
      * @param int|null $key Index for the new leg
      */
-    public function addTrip(AirTrip $trip, int $key = null): void
+    public function addTrip(AirTrip $trip, int|null $key = null): void
     {
         if ($this->maxStops < $trip->numberOfStops) {
             $this->maxStops = $trip->numberOfStops;
         }
-
-        foreach ($trip->segments as $segment)
-        {
-            if (!in_array($segment->carrier, $this->carriers)) {
-                $this->carriers[] = $segment->carrier;
-            }
-        }
-
-//        foreach ($trip->segments as $segment) {
-//            if (in_array($segment->baggage, ['0KG', '1KG', '0PC'])
-//                || false !== mb_strpos(mb_strtolower($segment->fareBasis), 'sf')) {
-//                $this->hasPackages = true;
-//            }
-//            if (!empty($this->flightsString)) {
-//                $this->flightsString .= ',';
-//            }
-//            $this->flightsString .= $segment->carrier . '_' . $segment->flightNumber
-//                . '_' . $segment->departure->format('Ymd');
-//            if (!empty($segment->bookingClass)) {
-//                $this->flightsString .= '_' . $segment->bookingClass;
-//            }
-//        }
 
         if (empty($key)) {
             $this->trips[] = $trip;
@@ -332,10 +207,10 @@ class AirOption
     /**
      * Function returns maximum leg duration time in minutes
      */
-    public function getMaxDuration($hours = FALSE)
+    public function getMaxDuration($hours = FALSE): int
     {
         $duration = 0;
-        foreach ($this->legs as $leg) {
+        foreach ($this->trips as $leg) {
             if ( $duration < $leg->duration ) {
                 $duration = $leg->duration;
             }
@@ -344,80 +219,8 @@ class AirOption
 
     }
 
-    /**
-     * Function returns last date of travel
-     */
-    public function getLastTravelDate()
-    {
-        $ltd = new \DateTime();
 
-        if ( count($this->legs) ) {
-            $lastLeg = $this->legs[count($this->legs) - 1];
-
-            if ( count($lastLeg->segments) ) {
-                $lastSeg = $lastLeg->segments[count($lastLeg->segments) - 1];
-                $ltd = $lastSeg->departure;
-            }
-        }
-
-        if ( get_class($ltd) == 'DateTime' ) {
-            $ltd = \DateTime::createFromFormat('Y-m-d H:i:s', $ltd->format('Y-m-d') . ' 00:00:00');
-        }
-
-        return $ltd;
-    }
-
-    /**
-     * Function checks if the option is completely performed by one carrier
-     * @param $carrier string Carrier code to be checked
-     * @return bool
-     */
-    public function checkCarrier(string $carrier): bool
-    {
-        if ($this->carrier != $carrier) {
-            return false;
-        }
-
-        foreach ($this->legs as $leg) {
-            foreach ($leg->segments as $seg) {
-                if ($seg->carrier != $carrier) {
-                    return false;
-                }
-            }
-        }
-
-        return true;
-    }
-
-    public function isBaggageIncluded()
-    {
-        $this->baggageIncluded = true;
-
-        foreach ($this->legs as $leg) {
-            foreach ($leg->segments as $segment) {
-                if (empty($segment->baggage) || in_array($segment->baggage, ['0KG', '0PC'])) {
-                    $this->baggageIncluded = false;
-                }
-            }
-        }
-
-        return $this->baggageIncluded;
-    }
-
-    public function GetFareFamily($familyID)
-    {
-        $res = null;
-        foreach ($this->packages->families as $family) {
-            if ($family->id == $familyID) {
-                $res = $family;
-                break;
-            }
-        }
-
-        return $res;
-    }
-
-    public function setBrandsID(string $brandsID, AirSearchRQ $searchRQ = null): void
+    public function setBrandsID(string $brandsID, AirSearchRequest|null $searchRQ = null): void
     {
         $this->familyID = $brandsID;
         $brandParts = explode(';', $brandsID);
@@ -473,166 +276,6 @@ class AirOption
         }
 
         return $codes;
-    }
-
-    public function setServiceFee(string $passengerType, int $qty): void
-    {
-        $grandTotalServiceFee = 0;
-        $grandTotalMarkupFee = 0;
-        $grandTotalDiscount = 0;
-
-        $serviceFee = $this->getServiceFeeAmount($passengerType);
-        if ($serviceFee > 0) {
-            foreach ($this->passengerInfos as &$passengerInfo) {
-                if ($passengerInfo->passengerType === $passengerType && $passengerInfo->match) {
-                    $passengerInfo->serviceFee = $serviceFee;
-                    $passengerInfo->total += $serviceFee;
-
-                    $totalServiceFee = $serviceFee * $qty;
-                    $grandTotalServiceFee += $totalServiceFee;
-                    \Yii::info('Сбор на 1 ' . $passengerType . ' ' . $serviceFee . ', количество ' . $qty
-                        . ', сумма за всех ' . $totalServiceFee, __METHOD__);
-                    $this->consolidatorServiceFee += $totalServiceFee;
-                    $this->price += $totalServiceFee;
-                    break;
-                }
-            }
-        }
-
-        $markup = $this->getMarkupAmount($passengerType);
-        if ($markup > 0) {
-            foreach ($this->passengerInfos as &$passengerInfo) {
-                /** @var BasePassengerInfo $passengerInfo */
-                if ($passengerInfo->passengerType === $passengerType && $passengerInfo->match) {
-                    $tax = new BaseTax();
-                    $tax->code = 'AD';
-                    $tax->amount = $markup;
-                    $tax->currency = $this->currency;
-                    $passengerInfo->addTax($tax);
-                    $passengerInfo->total += $markup;
-
-                    $totalMarkup = $markup * $qty;
-                    $grandTotalMarkupFee += $totalMarkup;
-                    \Yii::info('Маркап на 1 ' . $passengerType . ' ' . $markup . ', количество ' . $qty
-                        . ', сумма за всех ' . $totalMarkup, __METHOD__);
-                    $this->consolidatorMarkup += $totalMarkup;
-                    $this->price += $totalMarkup;
-                    break;
-                }
-            }
-        }
-
-        $discount = $this->getDiscountAmount($passengerType);
-        if ($discount > 0) {
-            foreach ($this->passengerInfos as &$passengerInfo) {
-                /** @var BasePassengerInfo $passengerInfo */
-                if ($passengerInfo->passengerType === $passengerType && $passengerInfo->match) {
-                    $passengerInfo->discount += $discount;
-
-                    $totalDiscount = $discount * $qty;
-                    $grandTotalDiscount += $totalDiscount;
-                    \Yii::info('Скидка на 1 ' . $passengerType . ' ' . $discount . ', количество ' . $qty
-                        . ', сумма за всех ' . $totalDiscount, __METHOD__);
-                    $this->discount += $totalDiscount;
-                    break;
-                }
-            }
-            unset($passengerInfo);
-        }
-
-        if ((!empty($grandTotalServiceFee) || !empty($grandTotalMarkupFee) || !empty($grandTotalDiscount))) {
-
-            if (empty($this->packages->combinations)) {
-                if (!empty($this->packages) && !empty($this->packages->families)) {
-                    foreach ($this->packages->families[0] as &$tripFamily) {
-                        $tripFamily->price += $grandTotalServiceFee + $grandTotalMarkupFee - $grandTotalDiscount;
-                    }
-                }
-            } else {
-                foreach ($this->packages->combinations as &$combination) {
-                    /* @var BaseFareFamilyCombination $combination */
-                    $combination->price += $grandTotalServiceFee + $grandTotalMarkupFee;
-
-                    if ($combination->hasDiscounts()) {
-                        $discount = $combination->getDiscountAmount($passengerType);
-                        if ( $discount > 0 ) {
-                            foreach ($combination->passengerInfos as &$passengerInfo) {
-                                /** @var BasePassengerInfo $passengerInfo */
-                                if ($passengerInfo->passengerType === $passengerType && $passengerInfo->match) {
-                                    $passengerInfo->discount += $discount;
-                                    $passengerInfo->total -= $discount;
-
-                                    $totalDiscount = $discount * $qty;
-                                    \Yii::info('Скидка на 1 ' . $passengerType . ' ' . $discount . ', количество ' . $qty
-                                        . ', сумма за всех ' . $totalDiscount, __METHOD__);
-                                    $combination->price -= $totalDiscount;
-                                    break;
-                                }
-                            }
-                            unset($passengerInfo);
-                        }
-                    } else {
-                        $combination->price -= $grandTotalDiscount;
-                    }
-                }
-            }
-
-
-        }
-
-    }
-
-    private function getServiceFeeAmount(string $passengerType): float
-    {
-        $serviceFee = 0;
-        if (isset($this->serviceFeeInfos[$passengerType])) {
-            $serviceFee = $this->serviceFeeInfos[$passengerType];
-        } elseif (isset($this->serviceFeeInfos['ANY'])) {
-            $serviceFee = $this->serviceFeeInfos['ANY'];
-        }
-
-        return $serviceFee;
-    }
-
-    private function getMarkupAmount(string $passengerType): float
-    {
-        $markup = 0;
-        if (isset($this->markupInfos[$passengerType])) {
-            $markup = $this->markupInfos[$passengerType];
-        } elseif (isset($this->markupInfos['ANY'])) {
-            $markup = $this->markupInfos['ANY'];
-        }
-
-        return $markup;
-    }
-
-    private function getDiscountAmount(string $passengerType): float
-    {
-        $discount = 0;
-        if (isset($this->discountInfos[$passengerType])) {
-            $discount = $this->discountInfos[$passengerType];
-        } elseif (isset($this->discountInfos['ANY'])) {
-            $discount = $this->discountInfos['ANY'];
-        }
-
-        return $discount;
-    }
-
-    public function clearProvider(): void
-    {
-        $this->provider = null;
-    }
-
-    public function clearPriceDetails(): void
-    {
-        $this->passengerInfos = [];
-    }
-
-    public function clearTaxDetails(): void
-    {
-        foreach ($this->passengerInfos as &$passengerInfo) {
-            $passengerInfo->taxes = [];
-        }
     }
 
     public function getPrice(): float
@@ -813,7 +456,7 @@ class AirOption
         $this->trips[$tripIndex] = $trip;
     }
 
-    public function setPrice(BaseFareFamilyCombination $combination, AirSearchRQ $searchRQ = null): void
+    public function setPrice(BaseFareFamilyCombination $combination, AirSearchRQ|null $searchRQ = null): void
     {
         if (!empty($combination->passengerInfos)) {
             $this->passengerInfos = $combination->passengerInfos;

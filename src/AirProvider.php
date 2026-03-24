@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Uis\Air;
+namespace Uiskz\Air;
 
 use Uiskz\Travel\Provider;
 

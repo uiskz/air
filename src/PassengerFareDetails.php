@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Uis\Air;
+namespace Uiskz\Air;
 
 use OpenApi\Attributes as OA;
 use Uiskz\Travel\Passenger;
@@ -46,28 +46,12 @@ class PassengerFareDetails
     public string $currency = 'KZT';
 
     #[OA\Property(
-        property: 'discount',
-        description: 'Discount amount',
-        type: 'double',
-        example: 5.00
-    )]
-    public float $discount = 0.0;
-
-    #[OA\Property(
         property: 'totalTaxes',
         description: 'Total taxes amount',
         type: 'double',
         example: 20.00
     )]
     public float $totalTaxes = 0.0;
-
-    #[OA\Property(
-        property: 'serviceFee',
-        description: 'Service fee amount',
-        type: 'double',
-        example: 10.00
-    )]
-    public float $serviceFee = 0.0;
 
     #[OA\Property(
         property: 'total',
@@ -124,44 +108,15 @@ class PassengerFareDetails
         $this->addTaxes($fareInfo->taxes);
     }
 
-    public function convertCurrency(string $code, float $rate): void
-    {
-        $this->fare = round($this->fare * $rate, 2);
-        $this->currency = $code;
-        $totalTaxes = 0;
-        foreach ($this->taxes as &$tax) {
-            if ($code != $tax->currency) {
-                $tax->amount = round($tax->amount * $rate, 2);
-                $tax->currency = $code;
-            }
-            $totalTaxes += $tax->amount;
-        }
-        $this->totalTaxes = $totalTaxes;
-        $this->total = $this->fare + $this->totalTaxes;
-    }
-
-    public function fillFromTicket(BaseTicket $ticket): void
-    {
-        $this->passengerType = $ticket->passengerType;
-        $this->currency = $ticket->totalCurrency;
-        $this->fare = empty($ticket->equivalentFareAmount) ? $ticket->baseFareAmount : $ticket->equivalentFareAmount;
-        $this->totalTaxes = $ticket->taxAmount;
-        $this->serviceFee = $ticket->serviceFee;
-        $this->taxes = $ticket->taxes;
-        $this->total = $ticket->grandTotalAmount;
-        $this->passengerQty = 1;
-    }
-
-    public function cleanPrice(): void
-    {
-        if (!empty($this->serviceFee)) {
-            $this->serviceFee = 0;
-        }
-
-        if (!empty($this->discount)) {
-            $this->discount = 0;
-        }
-
-        $this->total = $this->fare + $this->totalTaxes;
-    }
+//    public function fillFromTicket(BaseTicket $ticket): void
+//    {
+//        $this->passengerType = $ticket->passengerType;
+//        $this->currency = $ticket->totalCurrency;
+//        $this->fare = empty($ticket->equivalentFareAmount) ? $ticket->baseFareAmount : $ticket->equivalentFareAmount;
+//        $this->totalTaxes = $ticket->taxAmount;
+//        $this->serviceFee = $ticket->serviceFee;
+//        $this->taxes = $ticket->taxes;
+//        $this->total = $ticket->grandTotalAmount;
+//        $this->passengerQty = 1;
+//    }
 }
