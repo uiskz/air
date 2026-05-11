@@ -10,16 +10,16 @@ use Uiskz\Travel\Passenger;
     schema: 'PassengerFareDetails',
     description: 'Fare details for a passenger',
 )]
-class PassengerFareDetails
+class AirPassengerFareDetails
 {
     #[OA\Property(
-        property: 'passengerType',
+        property: 'type',
         description: 'Passenger type',
         type: 'string',
         example: Passenger::TYPE_ADULT,
         enum: [Passenger::TYPE_ADULT, Passenger::TYPE_CHILD, Passenger::TYPE_INFANT]
     )]
-    public string $passengerType;
+    public string $type;
 
     #[OA\Property(
         property: 'passengerQty',
@@ -62,7 +62,7 @@ class PassengerFareDetails
     public float $total = 0.0;
 
     /**
-     * @var Tax[] Fare taxes information
+     * @var AirTax[] Fare taxes information
      */
     #[OA\Property(
         property: 'taxes',
@@ -73,7 +73,7 @@ class PassengerFareDetails
     public array $taxes = [];
 
     /**
-     * @param Tax[] $taxes Array of taxes to be added.
+     * @param AirTax[] $taxes Array of taxes to be added.
      * @return void
      */
     public function addTaxes(array $taxes): void
@@ -83,7 +83,7 @@ class PassengerFareDetails
         }
     }
 
-    public function addTax(Tax $tax): void
+    public function addTax(AirTax $tax): void
     {
         $found = false;
         foreach ($this->taxes as &$existingTax) {
@@ -100,7 +100,7 @@ class PassengerFareDetails
         $this->totalTaxes += $tax->amount;
     }
 
-    public function merge(PassengerFareDetails $fareInfo): void
+    public function merge(AirPassengerFareDetails $fareInfo): void
     {
         $this->fare += $fareInfo->fare;
         $this->total += $fareInfo->total;

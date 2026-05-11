@@ -25,8 +25,6 @@ class AirSearchRequest
 
     public string $id;
 
-    public string $currency;
-
     public int $adults = 1;
 
     public int $children = 0;
@@ -36,8 +34,6 @@ class AirSearchRequest
     public string $class = self::CLASS_ECONOMY;
 
     public array $childrenAges = [];
-
-    public array $travelers = [];
 
     /**
      * @var BaseSearchTrip[]
@@ -50,16 +46,26 @@ class AirSearchRequest
 
     public string $searchType = self::SEARCH_TYPE_ONE_WAY;
 
-
+    /**
+     * Fills an object with data from an array
+     * @param array $data
+     * @throws \DateMalformedStringException|\InvalidArgumentException
+     */
     public function __construct(array $data)
     {
         $this->id = $data['id'];
-        $this->currency = $data['currency'];
         $this->adults = (int)$data['adults'] ?? 1;
         $this->children = (int)$data['children'] ?? 0;
         $this->infants = (int)$data['infants'] ?? 0;
         $this->setClass($data['class']);
         $this->setTrips($data['trips']);
+
+        if (isset($data['onlyRefundable'])) {
+            $this->onlyRefundable = (bool)$data['onlyRefundable'];
+        }
+        if (isset($data['childrenAges'])) {
+            $this->childrenAges = $data['childrenAges'];
+        }
     }
 
     protected function setClass(string $class): void
@@ -70,6 +76,11 @@ class AirSearchRequest
         }
     }
 
+    /**
+     * @param array $trips
+     * @return void
+     * @throws \DateMalformedStringException
+     */
     protected function setTrips(array $trips): void
     {
         if (empty($trips)) {
@@ -77,14 +88,33 @@ class AirSearchRequest
         }
         foreach ($trips as $trip) {
             $this->trips[] = new BaseSearchTrip($trip);
+            $this->setSearchType();
         }
     }
 
-    public function getCacheKey(): string
+    private function setSearchType(): void
+    {
+        if (count($this->trips) == 2 && $this->trips[0]->origin !== $this->trips[1]->destination
+            && $this->trips[0]->destination == $this->trips[1]->origin) {
+            $this->searchType = self::SEARCH_TYPE_ROUND_TRIP;
+        } elseif (count($this->trips) >= 2) {
+            $this->searchType = self::SEARCH_TYPE_MULTI_DIRECTIONAL;
+        }
+    }
+
+    /**
+     * Converts the current object state into a string representation.
+     *
+     * The string includes details of the trips and passenger information,
+     * formatted in a specific structure for further usage.
+     *
+     * @return string The string representation of the object, including trip details and passenger counts.
+     */
+    public function __toString(): string
     {
         $tripsData = [];
         foreach ($this->trips as $trip) {
-            $tripsData[] = $trip->origin . '_' . $trip->destination . '_' . $trip->date->format('Y-m-d');
+            $tripsData[] = (string)$trip;
         }
 
         return implode(';', $tripsData) . '&' . $this->adults . '_' . $this->children . '_' . $this->infants

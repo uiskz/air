@@ -145,7 +145,7 @@ class AirOption
      */
     public mixed $providerData;
 
-    /* @var PassengerFareDetails[] */
+    /* @var AirPassengerFareDetails[] */
     public array $passengerInfos = [];
 
     public string $searchType = AirSearchRequest::SEARCH_TYPE_ONE_WAY;
@@ -466,11 +466,11 @@ class AirOption
             foreach ($this->passengerInfos as &$passengerInfo) {
                 /* @var BasePassengerInfo $passengerInfo */
                 if (!empty($searchRQ)) {
-                    if ('ADT' == $passengerInfo->passengerType) {
+                    if ('ADT' == $passengerInfo->type) {
                         $passengerInfo->passengerQty = $searchRQ->adults;
-                    } elseif ('CHD' == $passengerInfo->passengerType) {
+                    } elseif ('CHD' == $passengerInfo->type) {
                         $passengerInfo->passengerQty = $searchRQ->children;
-                    } elseif ('INF' == $passengerInfo->passengerType) {
+                    } elseif ('INF' == $passengerInfo->type) {
                         $passengerInfo->passengerQty = $searchRQ->infants;
                     }
                 }
@@ -535,7 +535,7 @@ class AirOption
     {
         $found = false;
         foreach ($this->passengerInfos as &$passengerInfo) {
-            if ($passengerInfo->passengerType == $fareInfo->passengerType) {
+            if ($passengerInfo->type == $fareInfo->passengerType) {
                 $passengerInfo->merge($fareInfo);
                 $found = true;
                 break;

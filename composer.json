@@ -3,7 +3,7 @@
     "description": "Common interfaces and types for Air content",
     "homepage": "https://github.com/uiskz/air",
     "license": "MIT",
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "autoload": {
         "psr-4": {
             "Uiskz\\Air\\": "src/"
@@ -19,9 +19,9 @@
         "php": ">=8.3",
         "uiskz/travel": "dev-main",
         "zircote/swagger-php": "^6.0",
-        "psr/log": "^3.0@dev",
-        "stephenhill/base58": "dev-master",
-        "ramsey/uuid": "5.x-dev"
+        "psr/log": "^3.0",
+        "stephenhill/base58": "^2.1",
+        "ramsey/uuid": "^4.9"
     },
     "repositories": [
         {

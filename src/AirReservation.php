@@ -5,5 +5,8 @@ namespace Uiskz\Air;
 
 class AirReservation extends \Uiskz\Travel\Reservation
 {
-
+    /**
+     * @var AirSegment[]
+     */
+    public array $segments = [];
 }

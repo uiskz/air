@@ -14,7 +14,7 @@ use OpenApi\Attributes as OA;
     schema: 'Tax',
     description: 'Tax details',
 )]
-class Tax
+class AirTax
 {
     #[OA\Property(
         property: 'code',

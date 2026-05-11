@@ -10,7 +10,7 @@ use Uiskz\Travel\Passenger;
  * @package Uiskz\Air
  * @version 1.0.0
  */
-class Ticket
+class AirTicket
 {
     const string TYPE_TICKET = 'TICKET';
 
@@ -73,7 +73,7 @@ class Ticket
     public float $commissionPercent = 0;
 
     /**
-     * @var Tax[] Ticket taxes
+     * @var AirTax[] Ticket taxes
      */
     public array $taxes = [];
 
@@ -157,7 +157,7 @@ class Ticket
         }
     }
 
-    public function addTax(Tax $tax): void
+    public function addTax(AirTax $tax): void
     {
         $this->taxes[] = $tax;
         $this->taxAmount += $tax->amount;
@@ -174,7 +174,7 @@ class Ticket
         return substr($this->number, 0, 3) . '-' . substr($this->number, 3);
     }
 
-    public function fillSegmentsFromEmd(Ticket $emd): void
+    public function fillSegmentsFromEmd(AirTicket $emd): void
     {
         foreach ($this->segments as &$segment) {
             foreach ($emd->segments as $emdSegment) {
