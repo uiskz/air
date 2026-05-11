@@ -148,8 +148,6 @@ class AirOption
     /* @var AirPassengerFareDetails[] */
     public array $passengerInfos = [];
 
-    public string $searchType = AirSearchRequest::SEARCH_TYPE_ONE_WAY;
-
     public function __construct()
     {
         $this->generateNewId();
