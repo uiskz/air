@@ -17,19 +17,10 @@
     ],
     "require": {
         "php": ">=8.3",
-        "uiskz/travel": "dev-main",
+        "uiskz/travel": "^1.0",
         "zircote/swagger-php": "^6.0",
         "psr/log": "^3.0",
         "stephenhill/base58": "^2.1",
         "ramsey/uuid": "^4.9"
-    },
-    "repositories": [
-        {
-            "type": "path",
-            "url": "../uiskz-travel",
-            "options": {
-                "symlink": true
-            }
-        }
-    ]
+    }
 }
