@@ -50,7 +50,7 @@ class AirOption
         type: 'string',
         example: 'USD'
     )]
-    public string $currency = 'KZT';
+    public string $currency = '';
 
     protected float $currencyRate = 1.0;
 
