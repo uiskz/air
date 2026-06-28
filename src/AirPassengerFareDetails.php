@@ -98,6 +98,7 @@ class AirPassengerFareDetails
             $this->taxes[] = clone $tax;
         }
         $this->totalTaxes += $tax->amount;
+        $this->total += $tax->amount;
     }
 
     public function merge(AirPassengerFareDetails $fareInfo): void
