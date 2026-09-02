@@ -205,7 +205,7 @@ class AirOption
     /**
      * Function returns maximum leg duration time in minutes
      */
-    public function getMaxDuration($hours = FALSE): int
+    public function getMaxDuration(bool $hours = false): int
     {
         $duration = 0;
         foreach ($this->trips as $leg) {

@@ -18,9 +18,22 @@
     "require": {
         "php": ">=8.3",
         "uiskz/travel": "^1.0",
+        "uiskz/currency": "^1.0",
         "zircote/swagger-php": "^6.0",
         "psr/log": "^3.0",
         "stephenhill/base58": "^2.1",
         "ramsey/uuid": "^4.9"
-    }
+    },
+    "repositories": [
+        {
+            "name": "uiskz/currency",
+            "type": "path",
+            "url": "../uiskz-currency",
+            "options": {
+                "versions": {
+                    "uiskz/currency": "1.0.0"
+                }
+            }
+        }
+    ]
 }

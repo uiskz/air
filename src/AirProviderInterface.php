@@ -24,12 +24,30 @@ interface AirProviderInterface extends ProviderInterface {
     public function searchFlights(AirSearchRequest $request): AirSearchResponse;
 
     /**
+     * Get fare families for the given option, request, and response.
+     * @param AirOption $option Selected option for fare families retrieval.
+     * @param AirSearchRequest $request The request object containing search criteria such as departure, destination, and travel dates.
+     * @param AirSearchResponse $response The response object containing the search results including available flights.
+     * @return AirOption Options containing fare families as Combination arrays or Fare Family arrays.
+     */
+    public function getFareFamilies(AirOption $option, AirSearchRequest $request, AirSearchResponse $response): AirOption;
+
+    /**
+     * Get fare families for the given option, request, and response.
+     * @param AirOption $option Selected option for fare families retrieval.
+     * @param AirSearchRequest $request The request object containing search criteria such as departure, destination, and travel dates.
+     * @param AirSearchResponse $response The response object containing the search results including available flights.
+     * @return AirOption[] An array of fare options for a selected flight.
+     */
+    public function getFareFamilyOptions(AirOption $option, AirSearchRequest $request, AirSearchResponse $response): array;
+
+    /**
      * Creates a reservation for the specified flight.
      *
-     * @param CreateReservationParams $parms The parameters for creating the reservation.
+     * @param CreateReservationParams $params The parameters for creating the reservation.
      * @return AirReservation The reservation object representing the created reservation.
      */
-    public function createReservation(CreateReservationParams $parms): AirReservation;
+    public function createReservation(CreateReservationParams $params): AirReservation;
 
     /**
      * Retrieves an existing reservation by its ID (Locator).
