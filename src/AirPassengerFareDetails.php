@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Uiskz\Air;
 
 use OpenApi\Attributes as OA;
-use Uiskz\Travel\Passenger;
+use Uiskz\Travel\Traveler;
 
 #[OA\Schema(
     schema: 'PassengerFareDetails',
@@ -16,8 +16,8 @@ class AirPassengerFareDetails
         property: 'type',
         description: 'Passenger type',
         type: 'string',
-        example: Passenger::TYPE_ADULT,
-        enum: [Passenger::TYPE_ADULT, Passenger::TYPE_CHILD, Passenger::TYPE_INFANT]
+        example: Traveler::TYPE_ADULT,
+        enum: [Traveler::TYPE_ADULT, Traveler::TYPE_CHILD, Traveler::TYPE_INFANT]
     )]
     public string $type;
 
@@ -60,6 +60,42 @@ class AirPassengerFareDetails
         example: 180.00
     )]
     public float $total = 0.0;
+
+    #[OA\Property(
+        property: 'discount',
+        description: 'Discount amount',
+        type: 'double',
+        example: 5.00
+    )]
+    public float $discount = 0.0;
+
+    #[OA\Property(
+        property: 'serviceFee',
+        description: 'Service fee amount',
+        type: 'double',
+        example: 10.00
+    )]
+    public float $serviceFee = 0.0;
+
+    #[OA\Property(
+        property: 'agentFee',
+        description: 'Travel agency service fee amount',
+        type: 'double',
+        example: 10.00
+    )]
+    public float $agentFee = 0.0;
+
+    #[OA\Property(
+        property: 'grandTotal',
+        description: 'Total amount for the passenger, including service fee.',
+        type: 'double',
+        example: 180.00
+    )]
+    public float $grandTotal = 0.0;
+
+    protected float $consolidatorMarkup = 0.0;
+
+    protected float $agentMarkup = 0.0;
 
     /**
      * @var AirTax[] Fare taxes information
@@ -107,6 +143,26 @@ class AirPassengerFareDetails
         $this->total += $fareInfo->total;
 
         $this->addTaxes($fareInfo->taxes);
+    }
+
+    public function calculateGrandTotal(): void
+    {
+        $this->grandTotal = $this->total + $this->consolidatorMarkup + $this->agentMarkup
+            + $this->serviceFee + $this->agentFee - $this->discount;
+    }
+
+    public function cleanPrice(): void
+    {
+        if (!empty($this->serviceFee)) {
+            $this->serviceFee = 0;
+        }
+
+        if (!empty($this->discount)) {
+            $this->discount = 0;
+        }
+
+        $this->total = $this->fare + $this->totalTaxes;
+        $this->calculateGrandTotal();
     }
 
 //    public function fillFromTicket(BaseTicket $ticket): void

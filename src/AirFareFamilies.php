@@ -35,10 +35,10 @@ class AirFareFamilies
     )]
     public float $baseFare = 0.0;
 
-    public array $trips;
+    public array $trips = [];
 
     /**
-     * @var BaseFareFamilyCombination[]
+     * @var AirFareFamilyCombination[]
      */
     #[OA\Property(
         property: 'combinations',
@@ -64,7 +64,7 @@ class AirFareFamilies
         $this->families[] = $family;
     }
 
-    public function addCombination(BaseFareFamilyCombination $combination): void
+    public function addCombination(AirFareFamilyCombination $combination): void
     {
         $families = $combination->getFamilies();
         foreach ($families as $tripIndex => $family) {

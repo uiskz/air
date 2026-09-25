@@ -9,6 +9,8 @@ class AirSearchRequest
 {
     const string CLASS_ECONOMY = 'Y';
 
+    const string CLASS_PREMIUM_ECONOMY = 'W';
+
     const string CLASS_BUSINESS = 'B';
 
     const string CLASS_FIRST = 'F';

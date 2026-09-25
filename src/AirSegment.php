@@ -370,33 +370,16 @@ class AirSegment
         return $this->origin . '-' . $this->destination . ' ' . $this->carrier . '-' . $this->flightNumber;
     }
 
-//    public function setBrandInfo(BaseFareFamily $family, int $segmentNumber): void
-//    {
-//        $this->brandID = $family->id;
-//        if (!$family instanceof \app\Atom\Providers\Hitit\Dto\BrandedFare) {
-//            $this->fareBasis = $family->getFareBasis();
-//            $this->bookingClass = $family->getSegmentBookingClass($segmentNumber);
-//        }
-//        if (!empty($family->serviceClasses[$segmentNumber])) {
-//            $this->serviceClass = $family->getSegmentServiceClass($segmentNumber);
-//        }
-//        if (($family instanceof \app\Atom\Providers\Hitit\Dto\BrandedFare)
-//            && ($this instanceof \app\Atom\Providers\Hitit\Dto\FlightSegment)) {
-//            if ($family->fareType != $this->fareType) {
-//                $this->setFareInfo($this->providerObject->additionalFareInfo);
-//            } else {
-//                $this->setFareInfo($this->providerObject->fareInfo);
-//            }
-//            if (!empty($this->providerObject->fareInfo->farePkgInfoList)) {
-//                foreach ($this->providerObject->fareInfo->farePkgInfoList as &$fpi) {
-//                    $packageCategory = strtoupper($this->fareType) . ' ' . $fpi->pkgCatagory;
-//                    if ($family->id == $packageCategory) {
-//                        $fpi->selected = true;
-//                    } else {
-//                        $fpi->selected = false;
-//                    }
-//                }
-//            }
-//        }
-//    }
+    public function setBrandInfo(AirFareFamily $family, int $segmentNumber): void
+    {
+        $this->brandID = $family->id;
+        $fareBasis = $family->getFareBasis();
+        if ('' !== $fareBasis) {
+            $this->fareBasis = $fareBasis;
+        }
+        $bookingClass = $family->getSegmentBookingClass($segmentNumber);
+        if ('' !== $bookingClass) {
+            $this->bookingClass = $bookingClass;
+        }
+    }
 }

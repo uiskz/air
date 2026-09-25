@@ -158,7 +158,7 @@ class AirTrip
         return implode(';', $key);
     }
 
-    public function setBrandInfo(BaseFareFamily $family): void
+    public function setBrandInfo(AirFareFamily $family): void
     {
         $this->brandID = $family->id;
         $this->brandName = $family->name;

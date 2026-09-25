@@ -3,6 +3,7 @@ declare(strict_types=1);
 namespace Uiskz\Air;
 
 use OpenApi\Attributes as OA;
+use StephenHill\Base58;
 
 #[OA\Schema(
     schema: 'BrandsCombination',
@@ -23,7 +24,7 @@ use OpenApi\Attributes as OA;
     ],
     type: 'object'
 )]
-class AirFareFamilyCombination
+class AirFareFamilyCombination implements \JsonSerializable
 {
     public string $id = '';
 

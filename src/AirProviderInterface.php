@@ -77,4 +77,6 @@ interface AirProviderInterface extends ProviderInterface {
      * @return AirReservation VOIDed reservation
      */
     public function voidReservation(AirReservation $reservation): AirReservation;
+
+//    public function getRules(AirOption $option, AirSearchRequest $request, ?int $category = null, ?int $targetTrip = null): array;
 }

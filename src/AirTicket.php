@@ -2,7 +2,7 @@
 declare(strict_types=1);
 namespace Uiskz\Air;
 
-use Uiskz\Travel\Passenger;
+use Uiskz\Travel\Traveler;
 
 /**
  * Base Air tax
@@ -52,9 +52,9 @@ class AirTicket
 
     public string $pnrCode;
 
-    public Passenger $passenger;
+    public Traveler $passenger;
 
-    public string $passengerType = Passenger::TYPE_ADULT;
+    public string $passengerType = Traveler::TYPE_ADULT;
 
     public string $iataNumber;
 

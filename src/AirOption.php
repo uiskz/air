@@ -80,6 +80,16 @@ class AirOption
     public float $consolidatorMarkup = 0;
 
     /**
+     * @var float Consolidator service fee
+     */
+    public float $consolidatorServiceFee = 0;
+
+    /**
+     * @var float Agent discount
+     */
+    public float $discount = 0;
+
+    /**
      * @var AirTrip[]
      */
     #[OA\Property(
@@ -147,6 +157,23 @@ class AirOption
 
     /* @var AirPassengerFareDetails[] */
     public array $passengerInfos = [];
+
+    /**
+     * @var string[] Travel policy violation messages for this option
+     */
+    public array $policyViolations = [];
+
+    public int|null $providerID = null;
+
+    /**
+     * @var string|null Provider mode
+     */
+    public string|null $mode = null;
+
+    /**
+     * @var string|null Provider name
+     */
+    public string|null $provider = null;
 
     public function __construct()
     {
@@ -409,15 +436,15 @@ class AirOption
         $this->appliedActions[] = $action;
     }
 
-    public function setTripFareFamily(int $tripIndex, BaseFareFamily $family, BaseFareFamilyCombination $combination): void
+    public function setTripFareFamily(int $tripIndex, AirFareFamily $family, AirFareFamilyCombination $combination): void
     {
         $trip = $this->trips[$tripIndex];
         $trip->brandID = $family->id;
         $trip->brandName = $family->name;
         $trip->brandServices = $family->services;
         foreach ($trip->brandServices as $service) {
-            if (BaseFareFamilyService::TYPE_BAGGAGE == $service->type) {
-                if (BaseFareFamilyService::PAYMENT_INCLUDED == $service->paymentType) {
+            if (AirFareFamilyService::TYPE_BAGGAGE == $service->type) {
+                if (AirFareFamilyService::PAYMENT_INCLUDED == $service->paymentType) {
                     $this->hasBaggage = true;
                 } else {
                     $this->hasBaggage = false;
@@ -447,14 +474,14 @@ class AirOption
             }
         }
 
-        if ($combination instanceof \app\Atom\Providers\MixVel\Dto\FareFamilyCombination) {
+        if (method_exists($combination, 'getProviderData')) {
             $this->providerData = $combination->getProviderData();
         }
 
         $this->trips[$tripIndex] = $trip;
     }
 
-    public function setPrice(BaseFareFamilyCombination $combination, AirSearchRQ|null $searchRQ = null): void
+    public function setPrice(AirFareFamilyCombination $combination, AirSearchRequest|null $searchRQ = null): void
     {
         if (!empty($combination->passengerInfos)) {
             $this->passengerInfos = $combination->passengerInfos;
@@ -462,7 +489,7 @@ class AirOption
             $this->taxes = 0;
             $this->price = 0;
             foreach ($this->passengerInfos as &$passengerInfo) {
-                /* @var BasePassengerInfo $passengerInfo */
+                /* @var AirPassengerFareDetails $passengerInfo */
                 if (!empty($searchRQ)) {
                     if ('ADT' == $passengerInfo->type) {
                         $passengerInfo->passengerQty = $searchRQ->adults;
@@ -518,6 +545,55 @@ class AirOption
             foreach ($this->packages->combinations as $combination) {
                 $combination->cleanPrice();
             }
+        }
+    }
+
+    /**
+     * Walks a rules tree and applies each folder to this option.
+     *
+     * @param array $rulesTree Rule folders as produced by the rules engine
+     * @param string $operation Original operation passed to the folder applier (`book`, `issue`, …)
+     * @param mixed $context Rules application context
+     * @param callable(self, array, string, mixed): array $applyFolder
+     * @return array Application log
+     */
+    public function applyRules(array $rulesTree, string $operation, mixed $context, callable $applyFolder): array
+    {
+        $log = [];
+        foreach ($rulesTree as $folder) {
+            $folderLog = $applyFolder($this, $folder, $operation, $context);
+            $log = array_merge($log, $folderLog);
+        }
+
+        return $log;
+    }
+
+    /**
+     * Applies travel-policy amount and class checks to this option.
+     *
+     * @param float|null $limitAmount Max allowed price, or null to skip the amount check
+     * @param string $currency Currency code used in the amount-violation message
+     * @param callable(self): void|null $validateClasses Optional class-restriction checker
+     * @param bool $isRestrictive When true, $restrictAction is appended if any violations exist
+     * @param string $restrictAction Value appended when the policy is restrictive
+     */
+    public function applyTravelPolicy(
+        ?float $limitAmount,
+        string $currency,
+        ?callable $validateClasses,
+        bool $isRestrictive,
+        string $restrictAction
+    ): void {
+        $this->policyViolations = [];
+        if ($limitAmount !== null && $this->getPrice() > $limitAmount) {
+            $this->policyViolations[] = 'Сумма превышает установленный лимит для направления: ' . $limitAmount
+                . ' ' . $currency;
+        }
+        if ($validateClasses !== null) {
+            $validateClasses($this);
+        }
+        if (!empty($this->policyViolations) && $isRestrictive) {
+            $this->policyViolations[] = $restrictAction;
         }
     }
 

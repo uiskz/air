@@ -30,8 +30,20 @@
             "type": "path",
             "url": "../uiskz-currency",
             "options": {
+                "symlink": true,
                 "versions": {
                     "uiskz/currency": "1.0.0"
+                }
+            }
+        },
+        {
+            "name": "uiskz/travel",
+            "type": "path",
+            "url": "../uiskz-travel",
+            "options": {
+                "symlink": true,
+                "versions": {
+                    "uiskz/travel": "1.0.0"
                 }
             }
         }
