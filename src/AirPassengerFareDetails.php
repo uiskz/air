@@ -4,6 +4,9 @@ declare(strict_types=1);
 namespace Uiskz\Air;
 
 use OpenApi\Attributes as OA;
+use Uiskz\Travel\Fees\FeeKind;
+use Uiskz\Travel\Fees\FeeView;
+use Uiskz\Travel\Fees\OwnerFeesTrait;
 use Uiskz\Travel\Traveler;
 
 #[OA\Schema(
@@ -12,6 +15,8 @@ use Uiskz\Travel\Traveler;
 )]
 class AirPassengerFareDetails
 {
+    use OwnerFeesTrait;
+
     #[OA\Property(
         property: 'type',
         description: 'Passenger type',
@@ -86,6 +91,14 @@ class AirPassengerFareDetails
     public float $agentFee = 0.0;
 
     #[OA\Property(
+        property: 'providerServiceFee',
+        description: 'Service fees of the agencies above the viewer\'s direct agency',
+        type: 'double',
+        example: 10.00
+    )]
+    public float $providerServiceFee = 0.0;
+
+    #[OA\Property(
         property: 'grandTotal',
         description: 'Total amount for the passenger, including service fee.',
         type: 'double',
@@ -145,10 +158,78 @@ class AirPassengerFareDetails
         $this->addTaxes($fareInfo->taxes);
     }
 
+    /**
+     * Discount is informational: it is shown in the discount field and is not subtracted.
+     */
     public function calculateGrandTotal(): void
     {
         $this->grandTotal = $this->total + $this->consolidatorMarkup + $this->agentMarkup
-            + $this->serviceFee + $this->agentFee - $this->discount;
+            + $this->serviceFee + $this->agentFee + $this->providerServiceFee;
+    }
+
+    /**
+     * Sets the markup of one owner. $ownerID is the fee owner (client id); without it (legacy
+     * callers) the consolidator or agent bucket is overwritten.
+     */
+    public function setMarkup(float $amount, string $type, ?int $ownerID = null): void
+    {
+        $this->setOwnerAmount($ownerID, $type, FeeKind::MARKUP, $amount, $this->consolidatorMarkup, $this->agentMarkup);
+        $this->calculateGrandTotal();
+    }
+
+    /**
+     * Markup of the consolidator (client 1) or the sum of all agencies' markups.
+     */
+    public function getMarkup(string $type): float
+    {
+        if ('agent' == $type) {
+            return $this->agentMarkup;
+        }
+
+        return $this->consolidatorMarkup;
+    }
+
+    /**
+     * Sets the service fee of one owner. $ownerID is the fee owner (client id); without it
+     * (legacy callers) the consolidator or agent bucket is overwritten.
+     */
+    public function setServiceFee(float $amount, string $type, ?int $ownerID = null): void
+    {
+        if (!empty($amount)) {
+            $this->setOwnerAmount($ownerID, $type, FeeKind::SERVICE, $amount, $this->serviceFee, $this->agentFee);
+        }
+        $this->calculateGrandTotal();
+    }
+
+    /**
+     * Discount is shown separately and is not subtracted from the price.
+     */
+    public function setDiscount(float $amount, string $type): void
+    {
+        if ('agent' == $type) {
+            $this->discount += $amount;
+        } else {
+            $this->discount = $amount;
+        }
+        $this->calculateGrandTotal();
+    }
+
+    /**
+     * Owner amounts of this fare, completed from its consolidator/agent buckets
+     * ({@see FeeView::reconcile()}).
+     *
+     * @return array<int, array<string, float>>
+     */
+    public function getReconciledOwnerFees(int $legacyAgencyID): array
+    {
+        return FeeView::reconcile(
+            $this->ownerFees,
+            $this->serviceFee,
+            $this->consolidatorMarkup,
+            $this->agentFee,
+            $this->agentMarkup,
+            $legacyAgencyID
+        );
     }
 
     public function cleanPrice(): void
@@ -160,6 +241,8 @@ class AirPassengerFareDetails
         if (!empty($this->discount)) {
             $this->discount = 0;
         }
+        $this->agentFee = 0.0;
+        $this->providerServiceFee = 0.0;
 
         $this->total = $this->fare + $this->totalTaxes;
         $this->calculateGrandTotal();

@@ -16,6 +16,15 @@ use OpenApi\Attributes as OA;
 )]
 class AirTax
 {
+    /** Markup of the viewer's direct agency (the consolidator's own markup for the consolidator) */
+    const string CONSOLIDATOR_MARKUP = 'AD';
+
+    /** Viewer's own agency markup, shown as a tax without the markups module */
+    const string AGENT_MARKUP = 'SD';
+
+    /** Markups of the agencies above the viewer's direct agency */
+    const string UPPER_MARKUP = 'SFS';
+
     #[OA\Property(
         property: 'code',
         description: 'Tax code',

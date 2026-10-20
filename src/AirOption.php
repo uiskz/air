@@ -5,6 +5,8 @@ namespace Uiskz\Air;
 
 use OpenApi\Attributes as OA;
 use Ramsey\Uuid\Uuid;
+use Uiskz\Air\Fees\AirFeeTaxes;
+use Uiskz\Travel\Fees\FeeSlot;
 
 /**
  * Base Air Option containing flight information and prices available for booking
@@ -85,7 +87,27 @@ class AirOption
     public float $consolidatorServiceFee = 0;
 
     /**
-     * @var float Agent discount
+     * @var float Viewer's own service fees (equals agentFee totals of the passengers)
+     */
+    public float $agencyServiceFee = 0.0;
+
+    /**
+     * @var float Service fees of the agencies above the viewer's direct agency
+     */
+    public float $providerServiceFee = 0.0;
+
+    /**
+     * @var float Root consolidator's own markups, set only when the consolidator is the viewer
+     */
+    public float $consolidatorHiddenFee = 0.0;
+
+    /**
+     * @var float Viewer's own markups (shown in tax SD)
+     */
+    public float $agencyHiddenFee = 0.0;
+
+    /**
+     * @var float Discount: shown, not subtracted from the price
      */
     public float $discount = 0;
 
@@ -527,6 +549,10 @@ class AirOption
      */
     public function cleanPrice(): void
     {
+        $this->agencyServiceFee = 0.0;
+        $this->providerServiceFee = 0.0;
+        $this->consolidatorHiddenFee = 0.0;
+        $this->agencyHiddenFee = 0.0;
         if (!empty($this->consolidatorServiceFee)) {
             $this->consolidatorServiceFee = 0;
         }
@@ -618,6 +644,91 @@ class AirOption
 
         if (!$found) {
             $this->passengerInfos[] = clone $fareInfo;
+        }
+    }
+
+    /**
+     * Puts a service fee into the passenger fare field of the given {@see FeeSlot}:
+     * consolidator -> serviceFee, agency -> agentFee, provider -> providerServiceFee;
+     * a downstream fee has no field (the caller adds it to the total).
+     */
+    protected function placeServiceFee(AirPassengerFareDetails $passengerInfo, string $slot, float $serviceFee): void
+    {
+        switch ($slot) {
+            case FeeSlot::CONSOLIDATOR:
+                $passengerInfo->serviceFee = $serviceFee;
+                break;
+            case FeeSlot::AGENCY:
+                $passengerInfo->agentFee = $serviceFee;
+                break;
+            case FeeSlot::PROVIDER:
+                $passengerInfo->providerServiceFee += $serviceFee;
+                break;
+        }
+    }
+
+    /**
+     * Shows a markup as the slot's tax ({@see AirFeeTaxes::markupTaxCode()}); a downstream markup
+     * only raises the total. Service fees already included in the total are kept there.
+     */
+    protected function placeMarkup(AirPassengerFareDetails $passengerInfo, string $slot, float $markup): void
+    {
+        $code = AirFeeTaxes::markupTaxCode($slot);
+        if ($code === null) {
+            $passengerInfo->total += $markup;
+            return;
+        }
+
+        $feesInTotal = $passengerInfo->total - $passengerInfo->fare - $passengerInfo->totalTaxes;
+        $tax = $this->newFeeTax();
+        $tax->code = $code;
+        $tax->amount = $markup;
+        $tax->currency = $this->currency;
+        $passengerInfo->addTax($tax);
+        $passengerInfo->total = $passengerInfo->fare + $passengerInfo->totalTaxes + $feesInTotal;
+        $passengerInfo->calculateGrandTotal();
+    }
+
+    /**
+     * Tax object used for markups shown as taxes; products may return their own subclass.
+     */
+    protected function newFeeTax(): AirTax
+    {
+        return new AirTax();
+    }
+
+    /**
+     * Adds a service fee total to the option field of the given {@see FeeSlot}.
+     */
+    protected function addOptionServiceFee(string $slot, float $amount): void
+    {
+        switch ($slot) {
+            case FeeSlot::CONSOLIDATOR:
+                $this->consolidatorServiceFee += $amount;
+                break;
+            case FeeSlot::AGENCY:
+                $this->agencyServiceFee += $amount;
+                break;
+            case FeeSlot::PROVIDER:
+                $this->providerServiceFee += $amount;
+                break;
+        }
+    }
+
+    /**
+     * Adds a markup total to the option fields: consolidatorMarkup holds every markup the viewer
+     * sees as a tax, plus the root's own (consolidatorHiddenFee) or the viewer's own (agencyHiddenFee).
+     */
+    protected function addOptionHiddenFee(string $slot, float $amount, bool $viewerIsRoot): void
+    {
+        if ($slot === FeeSlot::DOWNSTREAM) {
+            return;
+        }
+        $this->consolidatorMarkup += $amount;
+        if ($slot === FeeSlot::CONSOLIDATOR && $viewerIsRoot) {
+            $this->consolidatorHiddenFee += $amount;
+        } elseif ($slot === FeeSlot::AGENCY) {
+            $this->agencyHiddenFee += $amount;
         }
     }
 }

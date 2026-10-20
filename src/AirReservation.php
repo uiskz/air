@@ -3,10 +3,12 @@ declare(strict_types=1);
 
 namespace Uiskz\Air;
 
+use Uiskz\Air\Fees\PassengerFeesViewTrait;
 use Uiskz\Currency\ConverterInterface;
 
 class AirReservation extends \Uiskz\Travel\Reservation
 {
+    use PassengerFeesViewTrait;
 
     public string $validatingCarrier = '';
 
@@ -29,6 +31,14 @@ class AirReservation extends \Uiskz\Travel\Reservation
      * Deadline to ticket a held booking. After this the seats go back.
      */
     public ?\DateTimeInterface $timeLimit = null;
+
+    /**
+     * @return AirPassengerFareDetails[]
+     */
+    protected function feePassengerInfos(): array
+    {
+        return $this->passengerInfos;
+    }
 
     public function convertCurrency(ConverterInterface $currencyService, string $currencyCode): void
     {
