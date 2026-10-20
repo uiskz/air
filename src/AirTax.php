@@ -49,4 +49,12 @@ class AirTax
         example: 20.00
     )]
     public float $amount = 0.0;
+
+    #[OA\Property(
+        property: 'providerAmount',
+        description: 'Tax amount in provider currency',
+        type: 'double',
+        example: 20.00
+    )]
+    public float $providerAmount = 0.0;
 }

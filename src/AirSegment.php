@@ -64,6 +64,21 @@ class AirSegment
     public string $baggage = '';
 
     /**
+     * @var string Seat number booked for the passenger on this segment
+     */
+    public string $seat = '';
+
+    /**
+     * @var string Meal booked for the passenger on this segment
+     */
+    public string $meal = '';
+
+    /**
+     * @var string Bundle (branded ancillary package) booked on this segment
+     */
+    public string $bundle = '';
+
+    /**
      * @var string Carry on allowance
      */
     #[OA\Property(
