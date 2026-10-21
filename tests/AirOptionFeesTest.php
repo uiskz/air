@@ -68,9 +68,28 @@ final class AirOptionFeesTest extends TestCase
 
         $this->assertSame(40.0, $info->serviceFee);
         $this->assertSame(15.0, $info->agentFee);
-        $this->assertSame(8.0, $info->providerServiceFee);
-        $this->assertSame(1200.0, $info->total);
-        $this->assertSame(1200.0 + 40 + 15 + 8 + 99, $info->grandTotal);
+        $this->assertSame(0.0, $info->providerServiceFee);
+        $this->assertSame(1200.0 + 8, $info->total);
+        $this->assertSame(1200.0 + 8 + 40 + 15 + 99, $info->grandTotal);
+    }
+
+    public function testUpperAgencyServiceFeeIsHiddenInSfsTax(): void
+    {
+        $option = $this->option();
+        $info = $this->passengerInfo();
+
+        $option->placeServiceFeeOf($info, FeeSlot::PROVIDER, 5);
+        $option->placeMarkupOf($info, FeeSlot::PROVIDER, 30);
+        $option->placeServiceFeeOf($info, FeeSlot::PROVIDER, 3);
+
+        $taxes = array_combine(
+            array_map(static fn(AirTax $tax) => $tax->code, $info->taxes),
+            array_map(static fn(AirTax $tax) => $tax->amount, $info->taxes)
+        );
+        $this->assertSame(['YQ' => 200.0, 'SFS' => 38.0], $taxes);
+        $this->assertSame(238.0, $info->totalTaxes);
+        $this->assertSame(0.0, $info->providerServiceFee);
+        $this->assertSame(1238.0, $info->grandTotal);
     }
 
     public function testMarkupIsShownAsTaxOfItsSlot(): void
@@ -142,7 +161,9 @@ final class AirOptionFeesTest extends TestCase
 
         $this->assertSame(50.0, $option->consolidatorServiceFee);
         $this->assertSame(15.0, $option->agencyServiceFee);
-        $this->assertSame(5.0, $option->providerServiceFee);
+        // Upper agencies' service fees are shown as tax SFS, like their markups
+        $this->assertSame(0.0, $option->providerServiceFee);
+        $this->assertSame(5.0, $option->consolidatorMarkup);
     }
 
     public function testOptionHiddenFeesOfRootViewer(): void

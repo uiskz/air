@@ -650,8 +650,9 @@ class AirOption
 
     /**
      * Puts a service fee into the passenger fare field of the given {@see FeeSlot}:
-     * consolidator -> serviceFee, agency -> agentFee, provider -> providerServiceFee;
-     * a downstream fee has no field. The total stays fare plus taxes; the fee counts in grandTotal.
+     * consolidator -> serviceFee, agency -> agentFee; a provider (upper agency) fee is hidden in
+     * tax SFS like its markups; a downstream fee has no field. The total stays fare plus taxes;
+     * the fee counts in grandTotal.
      */
     protected function placeServiceFee(AirPassengerFareDetails $passengerInfo, string $slot, float $serviceFee): void
     {
@@ -663,8 +664,8 @@ class AirOption
                 $passengerInfo->agentFee = $serviceFee;
                 break;
             case FeeSlot::PROVIDER:
-                $passengerInfo->providerServiceFee += $serviceFee;
-                break;
+                $this->placeMarkup($passengerInfo, $slot, $serviceFee);
+                return;
             default:
                 $passengerInfo->addExtraFee($serviceFee);
                 return;
@@ -701,7 +702,8 @@ class AirOption
     }
 
     /**
-     * Adds a service fee total to the option field of the given {@see FeeSlot}.
+     * Adds a service fee total to the option field of the given {@see FeeSlot}. A provider fee is
+     * shown as tax SFS ({@see placeServiceFee()}), so it adds up with the markups shown as taxes.
      */
     protected function addOptionServiceFee(string $slot, float $amount): void
     {
@@ -713,7 +715,7 @@ class AirOption
                 $this->agencyServiceFee += $amount;
                 break;
             case FeeSlot::PROVIDER:
-                $this->providerServiceFee += $amount;
+                $this->consolidatorMarkup += $amount;
                 break;
         }
     }
