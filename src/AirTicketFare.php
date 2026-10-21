@@ -53,15 +53,16 @@ class AirTicketFare
 
     /**
      * Fills the line from ticket amounts. A void line is negative and charges the void fees
-     * while returning the sale markups and agency fees.
+     * while returning the sale markups and agency fees. A sale line is dated by the ticket
+     * issue date, or now when it is missing or malformed.
      */
     public function fillFromTicket(AirTicket $ticket, string $operation): void
     {
         $multiplier = 1;
         $this->operation = $operation;
+        $this->date = new \DateTime('now', new \DateTimeZone('UTC'));
         if (AirTicket::OPERATION_VOID == $operation) {
             $multiplier = -1;
-            $this->date = new \DateTime('now', new \DateTimeZone('UTC'));
         } else {
             if (!empty($ticket->issueDate)) {
                 $date = \DateTime::createFromFormat('Y-m-d H:i:s', $ticket->issueDate, new \DateTimeZone('Asia/Almaty'));

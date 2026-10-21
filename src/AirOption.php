@@ -523,7 +523,8 @@ class AirOption
                 }
                 $this->fare += $passengerInfo->fare * $passengerInfo->passengerQty;
                 $this->taxes += $passengerInfo->totalTaxes * $passengerInfo->passengerQty;
-                $this->price += $passengerInfo->total * $passengerInfo->passengerQty;
+                $passengerInfo->calculateGrandTotal();
+                $this->price += $passengerInfo->grandTotal * $passengerInfo->passengerQty;
             }
         }
     }
@@ -650,7 +651,7 @@ class AirOption
     /**
      * Puts a service fee into the passenger fare field of the given {@see FeeSlot}:
      * consolidator -> serviceFee, agency -> agentFee, provider -> providerServiceFee;
-     * a downstream fee has no field (the caller adds it to the total).
+     * a downstream fee has no field. The total stays fare plus taxes; the fee counts in grandTotal.
      */
     protected function placeServiceFee(AirPassengerFareDetails $passengerInfo, string $slot, float $serviceFee): void
     {
@@ -664,28 +665,30 @@ class AirOption
             case FeeSlot::PROVIDER:
                 $passengerInfo->providerServiceFee += $serviceFee;
                 break;
+            default:
+                $passengerInfo->addExtraFee($serviceFee);
+                return;
         }
+        $passengerInfo->calculateGrandTotal();
     }
 
     /**
      * Shows a markup as the slot's tax ({@see AirFeeTaxes::markupTaxCode()}); a downstream markup
-     * only raises the total. Service fees already included in the total are kept there.
+     * counts only in grandTotal.
      */
     protected function placeMarkup(AirPassengerFareDetails $passengerInfo, string $slot, float $markup): void
     {
         $code = AirFeeTaxes::markupTaxCode($slot);
         if ($code === null) {
-            $passengerInfo->total += $markup;
+            $passengerInfo->addExtraFee($markup);
             return;
         }
 
-        $feesInTotal = $passengerInfo->total - $passengerInfo->fare - $passengerInfo->totalTaxes;
         $tax = $this->newFeeTax();
         $tax->code = $code;
         $tax->amount = $markup;
         $tax->currency = $this->currency;
         $passengerInfo->addTax($tax);
-        $passengerInfo->total = $passengerInfo->fare + $passengerInfo->totalTaxes + $feesInTotal;
         $passengerInfo->calculateGrandTotal();
     }
 

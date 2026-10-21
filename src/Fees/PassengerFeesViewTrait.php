@@ -41,7 +41,9 @@ trait PassengerFeesViewTrait
     }
 
     /**
-     * Provider taxes plus the hidden fees the viewer may not see as fees ({@see AirFeeTaxes::hiddenFeeTaxes()}).
+     * Provider taxes of all passengers (a passenger fare holds the taxes of one passenger, so they
+     * count passengerQty times) plus the hidden fees the viewer may not see as fees
+     * ({@see AirFeeTaxes::hiddenFeeTaxes()}).
      *
      * @return AirTax[]
      */
@@ -54,14 +56,16 @@ trait PassengerFeesViewTrait
                 $currency = $passengerInfo->currency;
             }
             foreach ($passengerInfo->taxes as $tax) {
-                foreach ($taxes as &$existingTax) {
+                $amount = $tax->amount * $passengerInfo->passengerQty;
+                foreach ($taxes as $existingTax) {
                     if ($existingTax->code == $tax->code) {
-                        $existingTax->amount += $tax->amount;
+                        $existingTax->amount += $amount;
                         continue 2;
                     }
                 }
-                unset($existingTax);
-                $taxes[] = clone $tax;
+                $newTax = clone $tax;
+                $newTax->amount = $amount;
+                $taxes[] = $newTax;
             }
         }
 

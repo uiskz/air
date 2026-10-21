@@ -9,6 +9,11 @@
             "Uiskz\\Air\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Uiskz\\Air\\Tests\\": "tests/"
+        }
+    },
     "authors": [
         {
             "name": "Dmitriy Gritsenko",
@@ -23,6 +28,9 @@
         "psr/log": "^3.0",
         "stephenhill/base58": "^2.1",
         "ramsey/uuid": "^4.9"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5"
     },
     "repositories": [
         {

@@ -206,11 +206,11 @@ class AirTicket
      */
     public function addTax(AirTax $tax): void
     {
+        $this->taxAmount += $tax->amount;
         foreach ($this->taxes as $existingTax) {
             if ($existingTax->code === $tax->code) {
                 $existingTax->amount += $tax->amount;
-                $this->taxAmount += $tax->amount;
-                $this->grandTotalAmount = $this->calculateGrandTotal();
+                $this->updateTotalAmount();
                 return;
             }
         }
@@ -220,7 +220,14 @@ class AirTicket
         }
 
         $this->taxes[] = $tax;
-        $this->taxAmount += $tax->amount;
+        $this->updateTotalAmount();
+    }
+
+    /**
+     * Total is the fare (equivalent fare when present) plus taxes.
+     */
+    private function updateTotalAmount(): void
+    {
         if (empty($this->equivalentFareAmount)) {
             $this->totalAmount = $this->baseFareAmount + $this->taxAmount;
         } else {

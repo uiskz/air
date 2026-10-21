@@ -60,7 +60,7 @@ class AirPassengerFareDetails
 
     #[OA\Property(
         property: 'total',
-        description: 'Total amount for the passenger, including taxes and service fee.',
+        description: 'Fare plus taxes for the passenger (markups shown as taxes included, service fees excluded).',
         type: 'double',
         example: 180.00
     )]
@@ -100,7 +100,7 @@ class AirPassengerFareDetails
 
     #[OA\Property(
         property: 'grandTotal',
-        description: 'Total amount for the passenger, including service fee.',
+        description: 'Total plus the service fees of all agencies.',
         type: 'double',
         example: 180.00
     )]
@@ -109,6 +109,12 @@ class AirPassengerFareDetails
     protected float $consolidatorMarkup = 0.0;
 
     protected float $agentMarkup = 0.0;
+
+    /**
+     * Amounts with no field of their own (fees of agencies below the viewer, airline fees and
+     * penalties): they count only in grandTotal.
+     */
+    protected float $extraFee = 0.0;
 
     /**
      * @var AirTax[] Fare taxes information
@@ -153,7 +159,7 @@ class AirPassengerFareDetails
     public function merge(AirPassengerFareDetails $fareInfo): void
     {
         $this->fare += $fareInfo->fare;
-        $this->total += $fareInfo->total;
+        $this->total += $fareInfo->fare;
 
         $this->addTaxes($fareInfo->taxes);
     }
@@ -164,7 +170,16 @@ class AirPassengerFareDetails
     public function calculateGrandTotal(): void
     {
         $this->grandTotal = $this->total + $this->consolidatorMarkup + $this->agentMarkup
-            + $this->serviceFee + $this->agentFee + $this->providerServiceFee;
+            + $this->serviceFee + $this->agentFee + $this->providerServiceFee + $this->extraFee;
+    }
+
+    /**
+     * Adds an amount that counts only in grandTotal ({@see $extraFee}).
+     */
+    public function addExtraFee(float $amount): void
+    {
+        $this->extraFee += $amount;
+        $this->calculateGrandTotal();
     }
 
     /**
@@ -243,6 +258,7 @@ class AirPassengerFareDetails
         }
         $this->agentFee = 0.0;
         $this->providerServiceFee = 0.0;
+        $this->extraFee = 0.0;
 
         $this->total = $this->fare + $this->totalTaxes;
         $this->calculateGrandTotal();
