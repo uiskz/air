@@ -50,9 +50,9 @@ final class PassengerFeesViewTraitTest extends TestCase
         return $reservation;
     }
 
-    private function view(int $viewerID): FeeView
+    private function view(int $viewerID, bool $parentServiceFeeShown = true): FeeView
     {
-        return new FeeView(new AgencyChain([1, 5, 9], [1, 5, 9]), $viewerID);
+        return new FeeView(new AgencyChain([1, 5, 9], [1, 5, 9]), $viewerID, $parentServiceFeeShown);
     }
 
     /**
@@ -81,15 +81,34 @@ final class PassengerFeesViewTraitTest extends TestCase
         $this->assertSame(30.0, $projection->upperHiddenFee);
     }
 
-    public function testRootSeesItsOwnFeesAndAgencyFeesAsDownstream(): void
+    public function testRootSeesItsOwnFeesAndFirstLevelSubAgentFeesAsAgency(): void
     {
         $projection = $this->reservation()->getFeeProjection($this->view(1));
 
         $this->assertSame(120.0, $projection->consolidatorServiceFee);
         $this->assertSame(30.0, $projection->consolidatorHiddenFee);
-        $this->assertSame(54.0, $projection->downstreamServiceFee);
-        $this->assertSame(72.0, $projection->downstreamHiddenFee);
+        $this->assertSame(45.0, $projection->agencyServiceFee);
+        $this->assertSame(60.0, $projection->agencyHiddenFee);
+        $this->assertSame(9.0, $projection->downstreamServiceFee);
+        $this->assertSame(12.0, $projection->downstreamHiddenFee);
         $this->assertSame(0.0, $projection->parentHiddenFee);
+    }
+
+    public function testFirstLevelSubAgentSeesConsolidatorFeeAsFeeAndMarkupAsAd(): void
+    {
+        $reservation = $this->reservation();
+
+        $this->assertSame(120.0, $reservation->getFeeProjection($this->view(5))->consolidatorServiceFee);
+        $this->assertSame(['AD' => 30.0], $reservation->hiddenFeeTaxAmounts($this->view(5), true));
+    }
+
+    public function testSubAgentWithoutServiceFeesSeesConsolidatorFeeAsSfs(): void
+    {
+        $reservation = $this->reservation();
+        $view = $this->view(5, false);
+
+        $this->assertSame(0.0, $reservation->getFeeProjection($view)->consolidatorServiceFee);
+        $this->assertSame(['AD' => 30.0, 'SFS' => 120.0], $reservation->hiddenFeeTaxAmounts($view, true));
     }
 
     public function testLegacyAgentBucketsBelongToTheBuyer(): void
@@ -112,7 +131,7 @@ final class PassengerFeesViewTraitTest extends TestCase
 
         // per-passenger taxes times passengerQty: YQ 150 * 2 + 100, KZ 50 * 3
         $this->assertSame(
-            ['YQ' => 400.0, 'KZ' => 150.0, 'AD' => 60.0, 'SFS' => 30.0, 'SD' => 12.0],
+            ['YQ' => 400.0, 'KZ' => 150.0, 'AD' => 60.0, 'SFS' => 150.0, 'SD' => 12.0],
             $this->amounts($taxes)
         );
         $this->assertSame('KZT', $taxes[4]->currency);
@@ -153,8 +172,8 @@ final class PassengerFeesViewTraitTest extends TestCase
     {
         $reservation = $this->reservation();
 
-        // (200 * 2 + 150) + AD 60 + SFS 30 + SD 12
-        $this->assertSame(652.0, $reservation->getTotalTaxes($this->view(9), false));
+        // (200 * 2 + 150) + AD 60 + SFS (markup 30 + service fee 120) + SD 12
+        $this->assertSame(772.0, $reservation->getTotalTaxes($this->view(9), false));
         $this->assertSame(550.0, $reservation->getTotalTaxes($this->view(1), true));
     }
 
