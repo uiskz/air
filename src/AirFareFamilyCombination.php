@@ -46,7 +46,7 @@ class AirFareFamilyCombination implements \JsonSerializable
     public ?\DateTimeInterface $lastTicketingDate = null;
 
     /**
-     * @var BasePassengerInfo[]
+     * @var AirPassengerFareDetails[]
      */
     public array $passengerInfos = [];
 

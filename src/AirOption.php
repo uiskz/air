@@ -491,11 +491,11 @@ class AirOption
             foreach ($this->passengerInfos as &$passengerInfo) {
                 /* @var AirPassengerFareDetails $passengerInfo */
                 if (!empty($searchRQ)) {
-                    if ('ADT' == $passengerInfo->type) {
+                    if ('ADT' == $passengerInfo->passengerType) {
                         $passengerInfo->passengerQty = $searchRQ->adults;
-                    } elseif ('CHD' == $passengerInfo->type) {
+                    } elseif ('CHD' == $passengerInfo->passengerType) {
                         $passengerInfo->passengerQty = $searchRQ->children;
-                    } elseif ('INF' == $passengerInfo->type) {
+                    } elseif ('INF' == $passengerInfo->passengerType) {
                         $passengerInfo->passengerQty = $searchRQ->infants;
                     }
                 }
@@ -600,16 +600,16 @@ class AirOption
     public function addPassengerInfos(array $fareInfos): void
     {
         foreach ($fareInfos as $fareInfo) {
-            /* @var $fareInfo BasePassengerInfo */
+            /* @var $fareInfo AirPassengerFareDetails */
             $this->addPassengerInfo($fareInfo);
         }
     }
 
-    private function addPassengerInfo(BasePassengerInfo $fareInfo): void
+    private function addPassengerInfo(AirPassengerFareDetails $fareInfo): void
     {
         $found = false;
         foreach ($this->passengerInfos as &$passengerInfo) {
-            if ($passengerInfo->type == $fareInfo->passengerType) {
+            if ($passengerInfo->passengerType == $fareInfo->passengerType && $passengerInfo->type == $fareInfo->type) {
                 $passengerInfo->merge($fareInfo);
                 $found = true;
                 break;

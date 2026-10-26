@@ -2,3 +2,4 @@
 .idea
 composer-dev.json
 composer.lock
+.phpunit.result.cache

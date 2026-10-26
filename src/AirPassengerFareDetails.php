@@ -6,20 +6,43 @@ namespace Uiskz\Air;
 use OpenApi\Attributes as OA;
 use Uiskz\Travel\Traveler;
 
+/**
+ * Fare details for one passenger category of an option or a reservation.
+ *
+ * Field semantics are fixed and must not be changed or swapped:
+ *  - $passengerType — the passenger category: ADT, CHD or INF ({@see Traveler}::TYPE_*);
+ *  - $type          — the kind of document the fare is for: {@see self::TYPE_TICKET} or {@see self::TYPE_EMD}.
+ *
+ * Never put the passenger category into $type. Providers that only know the passenger
+ * category set $passengerType and leave $type at its TICKET default.
+ */
 #[OA\Schema(
     schema: 'PassengerFareDetails',
     description: 'Fare details for a passenger',
 )]
 class AirPassengerFareDetails
 {
+    const string TYPE_TICKET = 'TICKET';
+
+    const string TYPE_EMD = 'EMD';
+
     #[OA\Property(
-        property: 'type',
+        property: 'passengerType',
         description: 'Passenger type',
         type: 'string',
         example: Traveler::TYPE_ADULT,
         enum: [Traveler::TYPE_ADULT, Traveler::TYPE_CHILD, Traveler::TYPE_INFANT]
     )]
-    public string $type;
+    public string $passengerType = Traveler::TYPE_ADULT;
+
+    #[OA\Property(
+        property: 'type',
+        description: 'Type of fare record: ticket or EMD',
+        type: 'string',
+        example: self::TYPE_TICKET,
+        enum: [self::TYPE_TICKET, self::TYPE_EMD]
+    )]
+    public string $type = self::TYPE_TICKET;
 
     #[OA\Property(
         property: 'passengerQty',
