@@ -23,7 +23,7 @@ class AirTax
     const string AGENT_MARKUP = 'SD';
 
     /** Markups of the agencies above the viewer's direct agency */
-    const string UPPER_MARKUP = 'SFS';
+    const string UPPER_MARKUP = 'AW';
 
     #[OA\Property(
         property: 'code',

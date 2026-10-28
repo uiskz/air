@@ -40,7 +40,7 @@ final class AirFeeTaxesTest extends TestCase
     public function testAgencyWithoutMarkupsModuleSeesItsOwnMarkupAsSd(): void
     {
         $this->assertSame(
-            ['AD' => 20.0, 'SFS' => 15.0, 'SD' => 4.0],
+            ['AD' => 20.0, 'AW' => 15.0, 'SD' => 4.0],
             AirFeeTaxes::hiddenFeeTaxes($this->view(9), $this->projection(), false)
         );
     }
@@ -48,7 +48,7 @@ final class AirFeeTaxesTest extends TestCase
     public function testAgencyWithMarkupsModuleDoesNotSeeSd(): void
     {
         $this->assertSame(
-            ['AD' => 20.0, 'SFS' => 15.0],
+            ['AD' => 20.0, 'AW' => 15.0],
             AirFeeTaxes::hiddenFeeTaxes($this->view(9), $this->projection(), true)
         );
     }
@@ -56,7 +56,7 @@ final class AirFeeTaxesTest extends TestCase
     public function testRootNeverSeesSd(): void
     {
         $this->assertSame(
-            ['AD' => 20.0, 'SFS' => 15.0],
+            ['AD' => 20.0, 'AW' => 15.0],
             AirFeeTaxes::hiddenFeeTaxes($this->view(1), $this->projection(), false)
         );
     }

@@ -10,7 +10,7 @@ use Uiskz\Travel\Fees\FeeView;
 
 /**
  * How hidden fees (markups) are shown in air prices: as taxes.
- * Direct agency -> AD, agencies above it -> SFS (their service fees too), own agency markup -> SD.
+ * Direct agency -> AD, agencies above it -> AW (their service fees too), own agency markup -> SD.
  */
 final class AirFeeTaxes
 {
@@ -30,7 +30,7 @@ final class AirFeeTaxes
     /**
      * Hidden fees the viewer sees only as taxes: the parent agency's markup as AD, upper agencies'
      * markups and the provider service fees (upper agencies' service fees, the parent's when the
-     * viewer may not add service fees) as SFS and, without the markups module, an agency's own
+     * viewer may not add service fees) as AW and, without the markups module, an agency's own
      * markup as SD. Callers must not show providerServiceFee as a fee as well.
      *
      * @return array<string, float> tax code => amount, zero amounts left out

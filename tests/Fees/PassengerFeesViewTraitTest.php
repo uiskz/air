@@ -102,13 +102,13 @@ final class PassengerFeesViewTraitTest extends TestCase
         $this->assertSame(['AD' => 30.0], $reservation->hiddenFeeTaxAmounts($this->view(5), true));
     }
 
-    public function testSubAgentWithoutServiceFeesSeesConsolidatorFeeAsSfs(): void
+    public function testSubAgentWithoutServiceFeesSeesConsolidatorFeeAsAw(): void
     {
         $reservation = $this->reservation();
         $view = $this->view(5, false);
 
         $this->assertSame(0.0, $reservation->getFeeProjection($view)->consolidatorServiceFee);
-        $this->assertSame(['AD' => 30.0, 'SFS' => 120.0], $reservation->hiddenFeeTaxAmounts($view, true));
+        $this->assertSame(['AD' => 30.0, 'AW' => 120.0], $reservation->hiddenFeeTaxAmounts($view, true));
     }
 
     public function testLegacyAgentBucketsBelongToTheBuyer(): void
@@ -131,7 +131,7 @@ final class PassengerFeesViewTraitTest extends TestCase
 
         // per-passenger taxes times passengerQty: YQ 150 * 2 + 100, KZ 50 * 3
         $this->assertSame(
-            ['YQ' => 400.0, 'KZ' => 150.0, 'AD' => 60.0, 'SFS' => 150.0, 'SD' => 12.0],
+            ['YQ' => 400.0, 'KZ' => 150.0, 'AD' => 60.0, 'AW' => 150.0, 'SD' => 12.0],
             $this->amounts($taxes)
         );
         $this->assertSame('KZT', $taxes[4]->currency);
@@ -172,7 +172,7 @@ final class PassengerFeesViewTraitTest extends TestCase
     {
         $reservation = $this->reservation();
 
-        // (200 * 2 + 150) + AD 60 + SFS (markup 30 + service fee 120) + SD 12
+        // (200 * 2 + 150) + AD 60 + AW (markup 30 + service fee 120) + SD 12
         $this->assertSame(772.0, $reservation->getTotalTaxes($this->view(9), false));
         $this->assertSame(550.0, $reservation->getTotalTaxes($this->view(1), true));
     }
