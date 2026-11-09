@@ -651,7 +651,7 @@ class AirOption
     /**
      * Puts a service fee into the passenger fare field of the given {@see FeeSlot}:
      * consolidator -> serviceFee, agency -> agentFee; a provider (upper agency) fee is hidden in
-     * tax AW like its markups; a downstream fee has no field. The total stays fare plus taxes;
+     * tax AW; a downstream fee has no field. The total stays fare plus taxes;
      * the fee counts in grandTotal.
      */
     protected function placeServiceFee(AirPassengerFareDetails $passengerInfo, string $slot, float $serviceFee): void
@@ -664,7 +664,7 @@ class AirOption
                 $passengerInfo->agentFee = $serviceFee;
                 break;
             case FeeSlot::PROVIDER:
-                $this->placeMarkup($passengerInfo, $slot, $serviceFee);
+                $this->placeFeeTax($passengerInfo, AirTax::HIDDEN_SERVICE_FEE, $serviceFee);
                 return;
             default:
                 $passengerInfo->addExtraFee($serviceFee);
@@ -677,17 +677,25 @@ class AirOption
      * Shows a markup as the slot's tax ({@see AirFeeTaxes::markupTaxCode()}); a downstream markup
      * counts only in grandTotal.
      */
-    protected function placeMarkup(AirPassengerFareDetails $passengerInfo, string $slot, float $markup): void
+    protected function placeMarkup(AirPassengerFareDetails $passengerInfo, string $slot, float $markup, bool $ownerIsRoot): void
     {
-        $code = AirFeeTaxes::markupTaxCode($slot);
+        $code = AirFeeTaxes::markupTaxCode($slot, $ownerIsRoot);
         if ($code === null) {
             $passengerInfo->addExtraFee($markup);
             return;
         }
 
+        $this->placeFeeTax($passengerInfo, $code, $markup);
+    }
+
+    /**
+     * Adds a hidden fee to the passenger fare as a tax of the given code.
+     */
+    protected function placeFeeTax(AirPassengerFareDetails $passengerInfo, string $code, float $amount): void
+    {
         $tax = $this->newFeeTax();
         $tax->code = $code;
-        $tax->amount = $markup;
+        $tax->amount = $amount;
         $tax->currency = $this->currency;
         $passengerInfo->addTax($tax);
         $passengerInfo->calculateGrandTotal();

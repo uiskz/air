@@ -20,9 +20,9 @@ final class AirOptionFeesTest extends TestCase
                 $this->placeServiceFee($info, $slot, $fee);
             }
 
-            public function placeMarkupOf(AirPassengerFareDetails $info, string $slot, float $markup): void
+            public function placeMarkupOf(AirPassengerFareDetails $info, string $slot, float $markup, bool $ownerIsRoot = false): void
             {
-                $this->placeMarkup($info, $slot, $markup);
+                $this->placeMarkup($info, $slot, $markup, $ownerIsRoot);
             }
 
             public function addServiceFeeOf(string $slot, float $amount): void
@@ -73,20 +73,20 @@ final class AirOptionFeesTest extends TestCase
         $this->assertSame(1200.0 + 8 + 40 + 15 + 99, $info->grandTotal);
     }
 
-    public function testUpperAgencyServiceFeeIsHiddenInAwTax(): void
+    public function testUpperAgencyServiceFeeIsHiddenInAwTaxApartFromMarkups(): void
     {
         $option = $this->option();
         $info = $this->passengerInfo();
 
         $option->placeServiceFeeOf($info, FeeSlot::PROVIDER, 5);
-        $option->placeMarkupOf($info, FeeSlot::PROVIDER, 30);
+        $option->placeMarkupOf($info, FeeSlot::PROVIDER, 30, true);
         $option->placeServiceFeeOf($info, FeeSlot::PROVIDER, 3);
 
         $taxes = array_combine(
             array_map(static fn(AirTax $tax) => $tax->code, $info->taxes),
             array_map(static fn(AirTax $tax) => $tax->amount, $info->taxes)
         );
-        $this->assertSame(['YQ' => 200.0, 'AW' => 38.0], $taxes);
+        $this->assertSame(['YQ' => 200.0, 'AW' => 8.0, 'AD' => 30.0], $taxes);
         $this->assertSame(238.0, $info->totalTaxes);
         $this->assertSame(0.0, $info->providerServiceFee);
         $this->assertSame(1238.0, $info->grandTotal);
@@ -97,10 +97,11 @@ final class AirOptionFeesTest extends TestCase
         $option = $this->option();
         $info = $this->passengerInfo();
 
-        $option->placeMarkupOf($info, FeeSlot::PROVIDER, 30);
+        // Sub-agent of a sub-agent: the root's markup above the parent is AD, the parent's markup is S2
+        $option->placeMarkupOf($info, FeeSlot::PROVIDER, 30, true);
         $option->placeMarkupOf($info, FeeSlot::CONSOLIDATOR, 20);
 
-        $this->assertSame(['YQ', 'AW', 'AD'], array_map(static fn(AirTax $tax) => $tax->code, $info->taxes));
+        $this->assertSame(['YQ', 'AD', 'S2'], array_map(static fn(AirTax $tax) => $tax->code, $info->taxes));
         $this->assertSame('KZT', $info->taxes[1]->currency);
         $this->assertSame(250.0, $info->totalTaxes);
         $this->assertSame(1250.0, $info->total);

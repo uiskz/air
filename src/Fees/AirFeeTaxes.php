@@ -9,37 +9,39 @@ use Uiskz\Travel\Fees\FeeSlot;
 use Uiskz\Travel\Fees\FeeView;
 
 /**
- * How hidden fees (markups) are shown in air prices: as taxes.
- * Direct agency -> AD, agencies above it -> AW (their service fees too), own agency markup -> SD.
+ * How hidden fees are shown in air prices: as taxes. The root consolidator's markup -> AD, service fees
+ * the viewer does not see as fees -> AW, markups of the agencies between the root and the viewer -> S2,
+ * the viewer's own markup without the markups module -> SD.
  */
 final class AirFeeTaxes
 {
     /**
-     * Tax code a hidden fee of the slot is shown as on a search option; null when it is not shown.
+     * Tax code a markup of the slot is shown as on a search option; null when it is not shown.
+     * The root consolidator's markup is AD, markups of other agencies above the viewer are S2.
      */
-    public static function markupTaxCode(string $slot): ?string
+    public static function markupTaxCode(string $slot, bool $ownerIsRoot): ?string
     {
         return match ($slot) {
-            FeeSlot::CONSOLIDATOR => AirTax::CONSOLIDATOR_MARKUP,
+            FeeSlot::CONSOLIDATOR, FeeSlot::PROVIDER => $ownerIsRoot ? AirTax::CONSOLIDATOR_MARKUP : AirTax::AGENCY_MARKUP,
             FeeSlot::AGENCY => AirTax::AGENT_MARKUP,
-            FeeSlot::PROVIDER => AirTax::UPPER_MARKUP,
             default => null,
         };
     }
 
     /**
-     * Hidden fees the viewer sees only as taxes: the parent agency's markup as AD, upper agencies'
-     * markups and the provider service fees (upper agencies' service fees, the parent's when the
-     * viewer may not add service fees) as AW and, without the markups module, an agency's own
-     * markup as SD. Callers must not show providerServiceFee as a fee as well.
+     * Hidden fees the viewer sees only as taxes: the root consolidator's markup as AD, the provider
+     * service fees (upper agencies' service fees, the parent's when the viewer may not add service
+     * fees) as AW, markups of the other agencies above the viewer as S2 and, without the markups
+     * module, an agency's own markup as SD. Callers must not show providerServiceFee as a fee as well.
      *
      * @return array<string, float> tax code => amount, zero amounts left out
      */
     public static function hiddenFeeTaxes(FeeView $view, FeeProjection $projection, bool $showMarkup): array
     {
         $amounts = [
-            AirTax::CONSOLIDATOR_MARKUP => $projection->parentHiddenFee,
-            AirTax::UPPER_MARKUP => $projection->upperHiddenFee + $projection->providerServiceFee,
+            AirTax::CONSOLIDATOR_MARKUP => $projection->rootHiddenFee,
+            AirTax::HIDDEN_SERVICE_FEE => $projection->providerServiceFee,
+            AirTax::AGENCY_MARKUP => $projection->parentHiddenFee + $projection->upperHiddenFee,
             AirTax::AGENT_MARKUP => (!$showMarkup && !$view->viewerIsRoot()) ? $projection->agencyHiddenFee : 0.0,
         ];
 

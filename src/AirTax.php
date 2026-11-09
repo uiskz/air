@@ -16,14 +16,18 @@ use OpenApi\Attributes as OA;
 )]
 class AirTax
 {
-    /** Markup of the viewer's direct agency (the consolidator's own markup for the consolidator) */
+    /** Markup of the root consolidator */
     const string CONSOLIDATOR_MARKUP = 'AD';
 
     /** Viewer's own agency markup, shown as a tax without the markups module */
     const string AGENT_MARKUP = 'SD';
 
-    /** Markups of the agencies above the viewer's direct agency */
-    const string UPPER_MARKUP = 'AW';
+    /** Service fees the viewer does not see as fees: of the agencies above its parent (the root
+     * consolidator's included), and its parent's when the viewer has no service fees module */
+    const string HIDDEN_SERVICE_FEE = 'AW';
+
+    /** Markups of the agencies between the root consolidator and the viewer */
+    const string AGENCY_MARKUP = 'S2';
 
     #[OA\Property(
         property: 'code',

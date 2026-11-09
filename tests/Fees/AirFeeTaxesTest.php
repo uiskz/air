@@ -16,6 +16,7 @@ final class AirFeeTaxesTest extends TestCase
     private function projection(): FeeProjection
     {
         $projection = new FeeProjection();
+        $projection->rootHiddenFee = 30;
         $projection->parentHiddenFee = 20;
         $projection->upperHiddenFee = 10;
         $projection->providerServiceFee = 5;
@@ -31,16 +32,27 @@ final class AirFeeTaxesTest extends TestCase
 
     public function testMarkupTaxCodeOfEachSlot(): void
     {
-        $this->assertSame(AirTax::CONSOLIDATOR_MARKUP, AirFeeTaxes::markupTaxCode(FeeSlot::CONSOLIDATOR));
-        $this->assertSame(AirTax::AGENT_MARKUP, AirFeeTaxes::markupTaxCode(FeeSlot::AGENCY));
-        $this->assertSame(AirTax::UPPER_MARKUP, AirFeeTaxes::markupTaxCode(FeeSlot::PROVIDER));
-        $this->assertNull(AirFeeTaxes::markupTaxCode(FeeSlot::DOWNSTREAM));
+        // The root consolidator's markup is AD wherever it sits, other agencies' markups above are S2
+        $this->assertSame('AD', AirFeeTaxes::markupTaxCode(FeeSlot::CONSOLIDATOR, true));
+        $this->assertSame('AD', AirFeeTaxes::markupTaxCode(FeeSlot::PROVIDER, true));
+        $this->assertSame('S2', AirFeeTaxes::markupTaxCode(FeeSlot::CONSOLIDATOR, false));
+        $this->assertSame('S2', AirFeeTaxes::markupTaxCode(FeeSlot::PROVIDER, false));
+        $this->assertSame(AirTax::AGENT_MARKUP, AirFeeTaxes::markupTaxCode(FeeSlot::AGENCY, false));
+        $this->assertNull(AirFeeTaxes::markupTaxCode(FeeSlot::DOWNSTREAM, false));
+    }
+
+    public function testTaxCodes(): void
+    {
+        $this->assertSame('AD', AirTax::CONSOLIDATOR_MARKUP);
+        $this->assertSame('AW', AirTax::HIDDEN_SERVICE_FEE);
+        $this->assertSame('S2', AirTax::AGENCY_MARKUP);
+        $this->assertSame('SD', AirTax::AGENT_MARKUP);
     }
 
     public function testAgencyWithoutMarkupsModuleSeesItsOwnMarkupAsSd(): void
     {
         $this->assertSame(
-            ['AD' => 20.0, 'AW' => 15.0, 'SD' => 4.0],
+            ['AD' => 30.0, 'AW' => 5.0, 'S2' => 30.0, 'SD' => 4.0],
             AirFeeTaxes::hiddenFeeTaxes($this->view(9), $this->projection(), false)
         );
     }
@@ -48,7 +60,7 @@ final class AirFeeTaxesTest extends TestCase
     public function testAgencyWithMarkupsModuleDoesNotSeeSd(): void
     {
         $this->assertSame(
-            ['AD' => 20.0, 'AW' => 15.0],
+            ['AD' => 30.0, 'AW' => 5.0, 'S2' => 30.0],
             AirFeeTaxes::hiddenFeeTaxes($this->view(9), $this->projection(), true)
         );
     }
@@ -56,7 +68,7 @@ final class AirFeeTaxesTest extends TestCase
     public function testRootNeverSeesSd(): void
     {
         $this->assertSame(
-            ['AD' => 20.0, 'AW' => 15.0],
+            ['AD' => 30.0, 'AW' => 5.0, 'S2' => 30.0],
             AirFeeTaxes::hiddenFeeTaxes($this->view(1), $this->projection(), false)
         );
     }
